@@ -34,10 +34,7 @@ Let's look at a basic example::
 
 .. -> src
 
-    >>> def save():
-    ...     with open('stack.py', 'w') as f:
-    ...         f.write(src)
-    >>> save()
+    >>> writefile('stack.py', src)
 
     >>> import pkg_resources
     >>> dist = pkg_resources.working_set.find(
@@ -68,16 +65,14 @@ management::
 
 .. -> src
 
-    >>> save()
+    >>> writefile('stack.py', src)
     >>> main(['./stack.py'])
     connecting to us-f12g
     create test
     {u'Resources': {}}
 
 If we create a subclass, the doc string will be used for a
-description:
-
-::
+description::
 
     import zc.cloudformation
 
@@ -92,11 +87,7 @@ description:
 
 .. -> src
 
-
-    >>> with open('stack.py', 'w') as f:
-    ...     f.write(src)
-
-
+    >>> writefile('stack.py', src)
     >>> main(['./stack.py'])
     connecting to us-f12g
     create test
@@ -123,3 +114,28 @@ So, there are a few things to notice about this:
   provided as a dictionary, it's converted to a list of items as
   expected by AWS.
 
+Decorator spelling
+==================
+
+It's annoying to define a class just to provide an init function.  If
+your initialization is in a single function, you can also use a stack
+as a decorator::
+
+
+    import zc.cloudformation
+
+    @zc.cloudformation.Stack('us-f12g', 'test')
+    def stack(stack):
+        stack.resources.queue = zc.cloudformation.Resource(
+            "AWS::SQS::Queue", Tags=dict(Name='q'))
+
+
+.. -> src
+
+    >>> writefile('stack.py', src)
+    >>> main(['./stack.py'])
+    connecting to us-f12g
+    create test
+    {u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
+                                                          u'Value': u'q'}]},
+                               u'Type': u'AWS::SQS::Queue'}}}

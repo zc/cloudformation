@@ -48,6 +48,10 @@ class Connection:
         self.stacks[stack_name].src = src
         pprint.pprint(json.loads(src))
 
+def writefile(file_name, data):
+    with open(file_name, 'w') as f:
+        f.write(data)
+
 def setUp(test):
     setupstack.setUpDirectory(test)
     connect_to_region = setupstack.context_manager(
@@ -56,6 +60,8 @@ def setUp(test):
     def _(region_name):
         print 'connecting to', region_name
         return Connection()
+
+    test.globs['writefile'] = writefile
 
 
 def test_suite():

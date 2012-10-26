@@ -55,6 +55,11 @@ class Stack:
     def init(self):
         pass
 
+    # Decorator support:
+    def __call__(self, func):
+        func(self)
+        return self
+
     def to_json(self):
         return json.dumps(self.data, cls=JSONEncoder)
 
