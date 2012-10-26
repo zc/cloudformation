@@ -1,0 +1,125 @@
+Cloud-formation stack generation
+================================
+
+The zc.cloudformation package provides a framework for managing AWS
+resources using AWS CloudFormation.  It workes by generating a
+CloudFormation stack data structure, converts it to JSON and uploads
+it to AWS using boto.
+
+To use it, you run its main program, suupplying the name of a stack
+module or file.  If the name is a valid module name, it will be
+imported, otherwise, it's interpreted as a file name and execed.
+
+The module must define a stack object that includes:
+
+name
+  The stack name.
+
+region_name
+  The name of the region to create/update the stack in.
+
+to_json()
+  A method for converting the stack to JSON to be uploaded to AWS.
+
+Let's look at a basic example::
+
+    class Stack:
+        region_name = 'us-f12g'
+        name = 'test'
+
+        def to_json(self):
+            return '{}'
+
+    stack = Stack()
+
+.. -> src
+
+    >>> def save():
+    ...     with open('stack.py', 'w') as f:
+    ...         f.write(src)
+    >>> save()
+
+    >>> import pkg_resources
+    >>> dist = pkg_resources.working_set.find(
+    ...     pkg_resources.Requirement.parse('zc.cloudformation'))
+    >>> main = pkg_resources.load_entry_point(
+    ...     dist, 'console_scripts','cloudformation')
+
+    >>> main(['./stack.py'])
+    connecting to us-f12g
+    create test
+    {}
+
+This example was so simple, it would fail if we really talked to AWS,
+since we haven't defined any resources.
+
+zc.cloudformation provides a nummber of helper facilities to help you
+create your cloudformation stack data.
+
+zc.cloudformation.Stack
+-----------------------
+
+The first helper is a base class that provides basic attribute
+management::
+
+    import zc.cloudformation
+
+    stack = zc.cloudformation.Stack('us-f12g', 'test')
+
+.. -> src
+
+    >>> save()
+    >>> main(['./stack.py'])
+    connecting to us-f12g
+    create test
+    {u'Resources': {}}
+
+If we create a subclass, the doc string will be used for a
+description:
+
+::
+
+    import zc.cloudformation
+
+    class Stack(zc.cloudformation.Stack):
+        "My test stack"
+
+        def init(self):
+            self.resources.queue = zc.cloudformation.Resource(
+                "AWS::SQS::Queue", Tags=dict(Name='q'))
+
+    stack = Stack('us-f12g', 'test')
+
+.. -> src
+
+
+    >>> with open('stack.py', 'w') as f:
+    ...     f.write(src)
+
+
+    >>> main(['./stack.py'])
+    connecting to us-f12g
+    create test
+    {u'Description': u'My test stack',
+     u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
+                                                          u'Value': u'q'}]},
+                               u'Type': u'AWS::SQS::Queue'}}}
+
+So, there are a few things to notice about this:
+
+- The stack description was set from the doc string.
+
+- We can define an init method that will be called to set up data.
+
+- We have a resources attribute who's attributes hold resources
+  defined by the stack.
+
+- A Resources constructor makes it a little more convenient to define
+  AWS resources.  It takes a resource type and optional keyword
+  arguments ``DependsOn``, ```DeletionPolicy``, and ``Metadata``.
+  Additional keyword arguments become resource properties.
+
+  As an added convenience, if the fairly standard ``Tag`` property is
+  provided as a dictionary, it's converted to a list of items as
+  expected by AWS.
+
