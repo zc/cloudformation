@@ -43,6 +43,7 @@ class Stack:
 
         self.region_name = region_name
         self.name = name
+        self.connection = boto.cloudformation.connect_to_region(region_name)
 
         self.resources = Resources()
         self.data = dict(Resources=self.resources.__dict__)
@@ -57,12 +58,24 @@ class Stack:
 
     # Decorator support:
     def __call__(self, func):
+        if func.__doc__:
+            self.data['Description'] = func.__doc__
         func(self)
         return self
 
     def to_json(self):
         return json.dumps(self.data, cls=JSONEncoder)
 
+    def stack_ref(self, stack_name, resource_name):
+        return self.connection.describe_stack_resource(
+            stack_name, resource_name
+            )[u'DescribeStackResourceResponse'
+              ][u'DescribeStackResourceResult'
+                ][u'StackResourceDetail'
+                  ][u'PhysicalResourceId']
+
+def ref(name):
+    return dict(Ref=name)
 
 def main(args=None):
     if args is None:
@@ -79,10 +92,10 @@ def main(args=None):
         execfile(module_name, globs)
 
     stack = globs['stack']
-    cfconn = boto.cloudformation.connect_to_region(stack.region_name)
 
-    update = [s for s in cfconn.describe_stacks() if s.stack_name == stack.name]
+    update = [s for s in stack.connection.describe_stacks()
+              if s.stack_name == stack.name]
     if update:
-        cfconn.update_stack(stack.name, stack.to_json())
+        stack.connection.update_stack(stack.name, stack.to_json())
     else:
-        cfconn.create_stack(stack.name, stack.to_json())
+        stack.connection.create_stack(stack.name, stack.to_json())

@@ -15,17 +15,24 @@ The module must define a stack object that includes:
 name
   The stack name.
 
-region_name
-  The name of the region to create/update the stack in.
+connection
+  A boto.cloudformation.CloudFormationConnection
+
+  This is typically created by calling::
+
+    boto.cloudformation.connect_to_region(region_name)
 
 to_json()
   A method for converting the stack to JSON to be uploaded to AWS.
 
 Let's look at a basic example::
 
+    import boto.cloudformation
+
     class Stack:
-        region_name = 'us-f12g'
-        name = 'test'
+        def __init__(self):
+            self.connection = boto.cloudformation.connect_to_region('us-f12g')
+            self.name = 'test'
 
         def to_json(self):
             return '{}'
@@ -68,7 +75,6 @@ management::
     >>> writefile('stack.py', src)
     >>> main(['./stack.py'])
     connecting to us-f12g
-    create test
     {u'Resources': {}}
 
 If we create a subclass, the doc string will be used for a
@@ -90,7 +96,6 @@ description::
     >>> writefile('stack.py', src)
     >>> main(['./stack.py'])
     connecting to us-f12g
-    create test
     {u'Description': u'My test stack',
      u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
                                                           u'Value': u'q'}]},
@@ -115,7 +120,7 @@ So, there are a few things to notice about this:
   expected by AWS.
 
 Decorator spelling
-==================
+------------------
 
 It's annoying to define a class just to provide an init function.  If
 your initialization is in a single function, you can also use a stack
@@ -126,6 +131,7 @@ as a decorator::
 
     @zc.cloudformation.Stack('us-f12g', 'test')
     def stack(stack):
+        "My test stack using a decorator"
         stack.resources.queue = zc.cloudformation.Resource(
             "AWS::SQS::Queue", Tags=dict(Name='q'))
 
@@ -135,7 +141,58 @@ as a decorator::
     >>> writefile('stack.py', src)
     >>> main(['./stack.py'])
     connecting to us-f12g
-    create test
-    {u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
+    {u'Description': u'My test stack using a decorator',
+     u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
                                                           u'Value': u'q'}]},
                                u'Type': u'AWS::SQS::Queue'}}}
+
+
+References
+----------
+
+A ``ref`` helper can be used as a minor convenience to spell resource
+references::
+
+
+    import zc.cloudformation
+    from zc.cloudformation import ref, Resource
+
+    @zc.cloudformation.Stack('us-f12g', 'vpc')
+    def stack(self):
+        self.resources.vpc = Resource("AWS::EC2::VPC", CidrBlock="10.0.0.0/16")
+        self.resources.public_subnet = Resource(
+            "AWS::EC2::Subnet", VpcId=ref("public_subnet"))
+
+.. -> src
+
+    >>> writefile('vpc.py', src)
+    >>> main(['./vpc.py']) # doctest: +NORMALIZE_WHITESPACE
+    connecting to us-f12g
+    create vpc
+    {u'Resources':
+         {u'public_subnet':
+             {u'Properties': {u'VpcId': {u'Ref': u'public_subnet'}},
+              u'Type': u'AWS::EC2::Subnet'},
+          u'vpc': {u'Properties': {u'CidrBlock': u'10.0.0.0/16'},
+                  u'Type': u'AWS::EC2::VPC'}}}
+
+Stacks have a ``stack_ref`` method that allows references accross
+stacks::
+
+    import zc.cloudformation
+    from zc.cloudformation import Resource
+
+    @zc.cloudformation.Stack('us-f12g', 'vpc')
+    def stack(self):
+        self.resources.elb = Resource(
+            "AWS::ElasticLoadBalancing::LoadBalancer",
+            Subnets=[self.stack_ref('vpc', 'public_subnet')])
+
+.. -> src
+
+    >>> writefile('elb.py', src)
+    >>> main(['./elb.py']) # doctest: +NORMALIZE_WHITESPACE
+    connecting to us-f12g
+    {u'Resources':
+        {u'elb': {u'Properties': {u'Subnets': [u'3']},
+                  u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
