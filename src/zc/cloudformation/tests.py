@@ -38,7 +38,7 @@ class Stack:
             r['id'] = str(self.__class__.rid)
         self.data = data
 
-class Connection:
+class CloudFormationConnection:
 
     def __init__(self):
         self.stacks = {}
@@ -63,6 +63,16 @@ class Connection:
                     StackResourceDetail=dict(
                         PhysicalResourceId=resource['id']))))
 
+class O:
+    def __init__(self, **kw):
+        self.__dict__.update(**kw)
+
+class EC2Connection:
+
+    def get_all_images(self, filters=None):
+        if filters and filters.get('tag:Name') == 'default':
+            return [O(id='ami-42')]
+
 def writefile(file_name, data):
     with open(file_name, 'w') as f:
         f.write(data)
@@ -72,12 +82,22 @@ def setUp(test):
     connect_to_region = setupstack.context_manager(
         test, mock.patch('boto.cloudformation.connect_to_region'))
 
-    connection = Connection()
+    connection = CloudFormationConnection()
 
-    @side_effect(connect_to_region)
+    @side_effect(
+        setupstack.context_manager(
+            test, mock.patch('boto.cloudformation.connect_to_region')))
     def _(region_name):
         print 'connecting to', region_name
         return connection
+
+    @side_effect(
+        setupstack.context_manager(
+            test, mock.patch('boto.ec2.connect_to_region')))
+    def _(region_name):
+        if region_name != 'us-f12g':
+            raise AssertionError
+        return EC2Connection()
 
     test.globs['writefile'] = writefile
 

@@ -1,6 +1,7 @@
 """usage: %prog module_name
 """
 import boto.cloudformation
+import boto.ec2
 import json
 import optparse
 import re
@@ -73,6 +74,11 @@ class Stack:
               ][u'DescribeStackResourceResult'
                 ][u'StackResourceDetail'
                   ][u'PhysicalResourceId']
+
+    def image_by_name(self, name):
+        [image] = boto.ec2.connect_to_region(self.region_name).get_all_images(
+            filters={'tag:Name': name})
+        return image.id
 
 def ref(name):
     return dict(Ref=name)

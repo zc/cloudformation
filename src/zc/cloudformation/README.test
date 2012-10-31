@@ -1,3 +1,4 @@
+================================
 Cloud-formation stack generation
 ================================
 
@@ -61,7 +62,7 @@ zc.cloudformation provides a nummber of helper facilities to help you
 create your cloudformation stack data.
 
 zc.cloudformation.Stack
------------------------
+=======================
 
 The first helper is a base class that provides basic attribute
 management::
@@ -119,8 +120,9 @@ So, there are a few things to notice about this:
   provided as a dictionary, it's converted to a list of items as
   expected by AWS.
 
+
 Decorator spelling
-------------------
+==================
 
 It's annoying to define a class just to provide an init function.  If
 your initialization is in a single function, you can also use a stack
@@ -148,7 +150,7 @@ as a decorator::
 
 
 References
-----------
+==========
 
 A ``ref`` helper can be used as a minor convenience to spell resource
 references::
@@ -196,3 +198,16 @@ stacks::
     {u'Resources':
         {u'elb': {u'Properties': {u'Subnets': [u'3']},
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
+
+Utility methods
+===============
+
+image_by_name(image_name)
+   Look up an image by name.
+
+    >>> import zc.cloudformation
+    >>> stack = zc.cloudformation.Stack('us-f12g', 'vpc')
+    connecting to us-f12g
+    >>> stack.image_by_name('default')
+    'ami-42'
+
