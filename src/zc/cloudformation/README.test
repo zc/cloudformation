@@ -184,7 +184,7 @@ stacks::
     import zc.cloudformation
     from zc.cloudformation import Resource
 
-    @zc.cloudformation.Stack('us-f12g', 'vpc')
+    @zc.cloudformation.Stack('us-f12g', 'lb')
     def stack(self):
         self.resources.elb = Resource(
             "AWS::ElasticLoadBalancing::LoadBalancer",
@@ -195,8 +195,9 @@ stacks::
     >>> writefile('elb.py', src)
     >>> main(['./elb.py']) # doctest: +NORMALIZE_WHITESPACE
     connecting to us-f12g
+    create lb
     {u'Resources':
-        {u'elb': {u'Properties': {u'Subnets': [u'3']},
+        {u'elb': {u'Properties': {u'Subnets': [u'8']},
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
 
 Utility methods
@@ -206,8 +207,34 @@ image_by_name(image_name)
    Look up an image by name.
 
     >>> import zc.cloudformation
-    >>> stack = zc.cloudformation.Stack('us-f12g', 'vpc')
+    >>> stack = zc.cloudformation.Stack('us-f12g', 'test')
     connecting to us-f12g
     >>> stack.image_by_name('default')
     'ami-42'
+
+Stack scripts
+=============
+
+Rather than passing stack module/file names to the cloudformation
+script, you can implement your own scripts that generate stacks by
+calling ``zc.cloudformation.upload``, passing the stack::
+
+    import zc.cloudformation
+    from zc.cloudformation import Resource
+
+    @zc.cloudformation.Stack('us-f12g', 'lb')
+    def stack(self):
+        self.resources.elb = Resource(
+            "AWS::ElasticLoadBalancing::LoadBalancer",
+            Subnets=[self.stack_ref('vpc', 'public_subnet')])
+
+    zc.cloudformation.upload(stack)
+
+.. -> src
+
+    >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+    connecting to us-f12g
+    {u'Resources': {u'elb':
+                       {u'Properties': {u'Subnets': [u'8']},
+                        u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
 

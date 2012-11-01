@@ -26,13 +26,17 @@ def side_effect(m):
 class Stack:
     rid = 0
 
-    def __init__(self, stack_name, src):
+    def __init__(self, stack_name):
         self.stack_name = stack_name
-        self.set_data(src)
+
+    def _setid(self, resource):
+        self.__class__.rid += 1
+        resource['id'] = str(self.__class__.rid)
 
     def set_data(self, src):
         data = json.loads(src)
         pprint.pprint(data, width=1)
+        self._setid(data)
         for n, r in sorted(data.get('Resources', {}).items()):
             self.__class__.rid += 1
             r['id'] = str(self.__class__.rid)
@@ -50,10 +54,11 @@ class CloudFormationConnection:
         if stack_name in self.stacks:
             raise KeyError(stack_name)
         print 'create', stack_name
-        self.stacks[stack_name] = Stack(stack_name, src)
+        self.stacks[stack_name] = Stack(stack_name)
+        return self.stacks[stack_name].set_data(src)
 
     def update_stack(self, stack_name, src):
-        self.stacks[stack_name].set_data(src)
+        return self.stacks[stack_name].set_data(src)
 
     def describe_stack_resource(self, stack_name, resource_name):
         resource = self.stacks[stack_name].data['Resources'][resource_name]

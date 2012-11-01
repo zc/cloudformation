@@ -99,9 +99,13 @@ def main(args=None):
 
     stack = globs['stack']
 
+    upload(stack)
+
+def upload(stack):
+
     update = [s for s in stack.connection.describe_stacks()
               if s.stack_name == stack.name]
     if update:
-        stack.connection.update_stack(stack.name, stack.to_json())
+        return stack.connection.update_stack(stack.name, stack.to_json())
     else:
-        stack.connection.create_stack(stack.name, stack.to_json())
+        return stack.connection.create_stack(stack.name, stack.to_json())
