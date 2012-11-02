@@ -27,8 +27,7 @@ class volume:
         replica = str(replica)
         if replica:
             name += 'R'+replica
-        if self.count > 1:
-            name += 'N%s' % (index + 1)
+        name += 'N%s' % (index + 1)
         return name
 
     def __call__(self, *args, **kw):
