@@ -1,0 +1,213 @@
+==============================================
+Helper module for setting up "storage servers"
+==============================================
+
+In our applications, we typically have to types of infrastructure,
+storage servers and application servers.  Application servers are
+configured with elastic load balancers (EBSs) and autoscaling groups
+in a fairly straightforward manner.
+
+Storage servers are a bit more complicated because the involve:
+
+- Multiple EBS volumes configured in raid10 arrays configurations for
+  reduntancy (http://blog.9minutesnooze.com/raid-10-ebs-data/) and
+  logical-volume manaager (LVM) volumes for expanability.
+
+- Redundant servers
+
+Storage servers have precious data and typically have higher
+availability requirements.
+
+The ``zc.cloudformation.storage`` module provides helper functions
+for defining:
+
+- Logical volumes containing multiple EBS volumes, and
+
+- Storage servers with attached volumes and volume meta-data.
+
+Here's an example::
+
+    from zc.cloudformation import Stack, storage, upload
+
+    @upload
+    @Stack('us-f12g', 'mystorage')
+    def _(stack):
+        volume = storage.volume(stack, 'vol', 'us-f12ga', 64, 4, (1, 2))
+        storage.servers(volume('/home/databases', 'sdg'), 'ami-42424242',
+                        domain='example.com', role='store')
+
+.. -> src
+
+    >>> exec(src) # doctest: +NORMALIZE_WHITESPACE +ELLIPSIS
+    connecting to us-f12g
+    create mystorage
+    {u'Resources': {u'storage1': {u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                  u'ImageId': u'ami-42424242',
+                                                  u'InstanceType': u'm1.small',
+                                                  u'Tags': [{u'Key': u'Name',
+                                                             u'Value': u'storage1.example.com'}],
+                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTEuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlY2F0IC9ob21lL2RhdGFiYXNlcyBzZGcx\nIHNkZzIgc2RnMyBzZGc0ID4+IC9ldGMvemltL3ZvbHVtZXMK\n',
+                                                  u'Volumes': [{u'Device': u'sdg1',
+                                                                u'VolumeId': {u'Ref': u'volR1N1'}},
+                                                               {u'Device': u'sdg2',
+                                                                u'VolumeId': {u'Ref': u'volR1N2'}},
+                                                               {u'Device': u'sdg3',
+                                                                u'VolumeId': {u'Ref': u'volR1N3'}},
+                                                               {u'Device': u'sdg4',
+                                                                u'VolumeId': {u'Ref': u'volR1N4'}}]},
+                                  u'Type': u'AWS::EC2::Instance'},
+                    u'storage2': {u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                  u'ImageId': u'ami-42424242',
+                                                  u'InstanceType': u'm1.small',
+                                                  u'Tags': [{u'Key': u'Name',
+                                                             u'Value': u'storage2.example.com'}],
+                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTIuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlY2F0IC9ob21lL2RhdGFiYXNlcyBzZGcx\nIHNkZzIgc2RnMyBzZGc0ID4+IC9ldGMvemltL3ZvbHVtZXMK\n',
+                                                  u'Volumes': [{u'Device': u'sdg1',
+                                                                u'VolumeId': {u'Ref': u'volR2N1'}},
+                                                               {u'Device': u'sdg2',
+                                                                u'VolumeId': {u'Ref': u'volR2N2'}},
+                                                               {u'Device': u'sdg3',
+                                                                u'VolumeId': {u'Ref': u'volR2N3'}},
+                                                               {u'Device': u'sdg4',
+                                                                u'VolumeId': {u'Ref': u'volR2N4'}}]},
+                                  u'Type': u'AWS::EC2::Instance'},
+                    u'volR1N1': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR1N1'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR1N2': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR1N2'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR1N3': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR1N3'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR1N4': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR1N4'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR2N1': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR2N1'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR2N2': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR2N2'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR2N3': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR2N3'}]},
+                                 u'Type': u'AWS::EC2::Volume'},
+                    u'volR2N4': {u'DeletionPolicy': u'Retain',
+                                 u'Properties': {u'AvailabilityZone': u'us-f12ga',
+                                                 u'Size': 64,
+                                                 u'Tags': [{u'Key': u'Name',
+                                                            u'Value': u'volR2N4'}]},
+                                 u'Type': u'AWS::EC2::Volume'}}}
+
+
+In this example, we create a logical volume with 2 replicas, named ``1``
+and ``2`` each made of 4 64-Gigiabyte EBS volumes by calling:
+
+``storage.volume(stack, name, zone, size[, count[, replicas]])``
+    Create a logical volume.
+
+    Arguments:
+
+    ``stack``
+       A ``zc.cloudformation.Stack`` object to add EBS volume
+       resources to.
+
+    ``name``
+       The cloud-formation resource name prefix.  The resource name
+       for each EBS volume is computed by combining the prefix
+       with the replica name and the index.
+
+    ``zone``
+       The availability zone to create the volumes in.
+
+    ``size``
+       Size of EBS volumes in Gigabytes.
+
+    ``count``
+       Number of volumes per replica (default 1)
+
+    ``replicas``
+       A sequence of replica names.
+
+       These are typically numbers and must be alphanumeric. Integers
+       are allowed for convenience.  Defaults to ``('',)``
+
+    Returns a volume object that can be called to define volume attachments.
+
+We also create multiple storage servers, one for each volume replica:
+
+``storage.servers(attachment, image[, name[, zone[, subnet[, type[, domain[, role[, security_groups[, instance_profile]]]]]]]])``
+    Create multiple storage servers, one for each replica.
+
+    Arguments:
+
+    ``attachment``
+       An attachment object, or a a sequence of attachment objects.
+
+       Attachements are created by calling the object returned by
+       ``storage.volume`` passing a mount point, and a device prefix.
+
+       If a sequence of attachments are provided, the volumes they
+       were created with must have the same stack and replicas.
+
+    ``image``
+       An image (AMI) id to create instances from.
+
+    ``name``
+       The cloud-formation resource name prefix.  The resource name
+       for each storage server is computed by concatinating the prefix
+       and a replica name.
+
+    ``zone``
+       The availability zone to create the instance in.
+
+       You have to specify either a zone or a subnet.
+
+    ``subnet``
+       The VPC subnet to create the instance in.
+
+       You have to specify either a zone or a subnet.
+
+    ``type``
+      EC2 instance type (default 'm1.small')
+
+    ``domain``
+      A host domain
+
+      If provided, each machine will have its host name set based on
+      the resource name and the domain name.
+      (e.g. ``storage1.example.com`` and ``storage2.example.com`` in
+      the example above.)
+
+    ``role``
+      A machine "role" to be used by ``zc.zkdeployment`` when
+      configuring applications on the machines.
+
+    ``security_groups``
+      A list of security groups.
+
+    ``instance_profile``
+      The name of an IAM instance profile
+
+
