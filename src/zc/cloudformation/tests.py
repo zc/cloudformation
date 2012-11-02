@@ -88,6 +88,7 @@ def setUp(test):
         test, mock.patch('boto.cloudformation.connect_to_region'))
 
     connection = CloudFormationConnection()
+    test.globs['stacks'] = connection.stacks
 
     @side_effect(
         setupstack.context_manager(

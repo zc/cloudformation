@@ -210,4 +210,12 @@ We also create multiple storage servers, one for each volume replica:
     ``instance_profile``
       The name of an IAM instance profile
 
+When storage servers are created, they get user data that's a script
+to set up thier role, hostname and storage configuration.  For
+example, storage1.example.com gets:
+
+
+    >>> print stacks['mystorage']['Resources']['storage1']['Properties'
+    ...           ]['UserData'].decode('base64')
+
 
