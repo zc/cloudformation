@@ -46,7 +46,7 @@ Here's an example::
                                                   u'InstanceType': u'm1.small',
                                                   u'Tags': [{u'Key': u'Name',
                                                              u'Value': u'storage1.example.com'}],
-                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTEuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlY2F0IC9ob21lL2RhdGFiYXNlcyBzZGcx\nIHNkZzIgc2RnMyBzZGc0ID4+IC9ldGMvemltL3ZvbHVtZXMK\n',
+                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTEuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlCmNhdCAvaG9tZS9kYXRhYmFzZXMgc2Rn\nMSBzZGcyIHNkZzMgc2RnNCA+PiAvZXRjL3ppbS92b2x1bWVzCg==\n',
                                                   u'Volumes': [{u'Device': u'sdg1',
                                                                 u'VolumeId': {u'Ref': u'volR1N1'}},
                                                                {u'Device': u'sdg2',
@@ -61,7 +61,7 @@ Here's an example::
                                                   u'InstanceType': u'm1.small',
                                                   u'Tags': [{u'Key': u'Name',
                                                              u'Value': u'storage2.example.com'}],
-                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTIuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlY2F0IC9ob21lL2RhdGFiYXNlcyBzZGcx\nIHNkZzIgc2RnMyBzZGc0ID4+IC9ldGMvemltL3ZvbHVtZXMK\n',
+                                                  u'UserData': u'IyEvYmluL3NoIC12ZXgKbWtkaXIgLXAgL2V0Yy96aW0KaG9zdG5hbWUgc3RvcmFnZTIuZXhhbXBs\nZS5jb20KY2F0ICdzdG9yZScgPiAvZXRjL3ppbS9yb2xlCmNhdCAvaG9tZS9kYXRhYmFzZXMgc2Rn\nMSBzZGcyIHNkZzMgc2RnNCA+PiAvZXRjL3ppbS92b2x1bWVzCg==\n',
                                                   u'Volumes': [{u'Device': u'sdg1',
                                                                 u'VolumeId': {u'Ref': u'volR2N1'}},
                                                                {u'Device': u'sdg2',
@@ -212,10 +212,18 @@ We also create multiple storage servers, one for each volume replica:
 
 When storage servers are created, they get user data that's a script
 to set up thier role, hostname and storage configuration.  For
-example, storage1.example.com gets:
+example, storage1.example.com gets::
 
+    #!/bin/sh -vex
+    mkdir -p /etc/zim
+    hostname storage1.example.com
+    cat 'store' > /etc/zim/role
+    cat /home/databases sdg1 sdg2 sdg3 sdg4 >> /etc/zim/volumes
 
-    >>> print stacks['mystorage']['Resources']['storage1']['Properties'
-    ...           ]['UserData'].decode('base64')
+.. -> user_data
+
+    >>> stacks['mystorage'].data['Resources']['storage1']['Properties'
+    ...           ]['UserData'].decode('base64') == user_data
+    True
 
 

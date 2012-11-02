@@ -98,7 +98,7 @@ def server(attachment, image, zone=None, subnet=None,
         tags.update(Name=hostname)
 
     if role:
-        user_data += 'cat %r > /etc/zim/role' % role
+        user_data += 'cat %r > /etc/zim/role\n' % role
 
     if isinstance(attachment, Attachment):
         attachment = attachment,
