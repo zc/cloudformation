@@ -19,7 +19,7 @@ class volume:
                             Size=size,
                             AvailabilityZone=zone,
                             DeletionPolicy="Retain",
-                            Tags=dict(Name=rname),
+                            Tags=dict(Name="%s %s" % (stack.name, rname)),
                             ))
 
     def rname(self, replica, index):
