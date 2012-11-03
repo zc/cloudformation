@@ -144,9 +144,9 @@ def server(attachment, image, zone=None, subnet=None,
 
     if security_groups:
         if subnet:
-            properties.update(SecurityGroups=security_groups)
-        else:
             properties.update(SecurityGroupIds=security_groups)
+        else:
+            properties.update(SecurityGroup=security_groups)
 
     if instance_profile:
         properties.update(IamInstanceProfile=instance_profile)
