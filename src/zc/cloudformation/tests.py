@@ -121,6 +121,8 @@ def setUp(test):
 
     test.globs['writefile'] = writefile
 
+    setupstack.context_manager(test, mock.patch('logging.basicConfig'))
+
 
 def test_suite():
     return unittest.TestSuite((

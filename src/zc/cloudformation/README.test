@@ -50,10 +50,14 @@ Let's look at a basic example::
     >>> main = pkg_resources.load_entry_point(
     ...     dist, 'console_scripts','cloudformation')
 
+    >>> import logging
+
     >>> main(['./stack.py'])
     connecting to us-f12g
     create test
     {}
+
+    >>> logging.basicConfig.assert_called_with()
 
 This example was so simple, it would fail if we really talked to AWS,
 since we haven't defined any resources.

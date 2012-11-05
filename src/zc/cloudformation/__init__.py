@@ -4,6 +4,7 @@ import boto.cloudformation
 import boto.exception
 import boto.ec2
 import json
+import logging
 import optparse
 import re
 import sys
@@ -93,6 +94,8 @@ def main(args=None):
     options, args = parser.parse_args(args)
 
     [module_name] = args
+
+    logging.basicConfig()
 
     if is_module(module_name):
         globs = __import__(module_name, {}, {}, ['*']).__dict__
