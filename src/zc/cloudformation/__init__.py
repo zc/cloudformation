@@ -65,7 +65,7 @@ class Stack:
         return self
 
     def to_json(self):
-        return json.dumps(self.data, cls=JSONEncoder)
+        return json.dumps(self.data, cls=JSONEncoder, sort_keys=True, indent=4)
 
     def stack_ref(self, stack_name, resource_name):
         return self.connection.describe_stack_resource(
