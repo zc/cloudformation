@@ -1,6 +1,7 @@
 """usage: %prog module_name
 """
 import boto.cloudformation
+import boto.exception
 import boto.ec2
 import json
 import optparse
