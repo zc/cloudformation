@@ -197,7 +197,7 @@ stacks::
     connecting to us-f12g
     create lb
     {u'Resources':
-        {u'elb': {u'Properties': {u'Subnets': [u'8']},
+        {u'elb': {u'Properties': {u'Subnets': [u'5']},
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
 
 Utility methods
@@ -222,7 +222,7 @@ calling ``zc.cloudformation.upload``, passing the stack::
     import zc.cloudformation
     from zc.cloudformation import Resource
 
-    @zc.cloudformation.Stack('us-f12g', 'lb')
+    @zc.cloudformation.Stack('us-f12g', 'lb2')
     def stack(self):
         self.resources.elb = Resource(
             "AWS::ElasticLoadBalancing::LoadBalancer",
@@ -234,7 +234,20 @@ calling ``zc.cloudformation.upload``, passing the stack::
 
     >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
     connecting to us-f12g
+    create lb2
     {u'Resources': {u'elb':
-                       {u'Properties': {u'Subnets': [u'8']},
+                       {u'Properties': {u'Subnets': [u'5']},
                         u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
 
+Noop updates
+============
+
+If you make an update with data that's the same as that provided
+before, a CloudFormation will generate an error response.  Boto will
+log it, but zc.cloudformation will catch and ignore it.
+
+    >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+    connecting to us-f12g
+
+We can see this in the example above because the new data
+printed.

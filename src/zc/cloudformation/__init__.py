@@ -108,6 +108,10 @@ def upload(stack):
     update = [s for s in stack.connection.describe_stacks()
               if s.stack_name == stack.name]
     if update:
-        return stack.connection.update_stack(stack.name, stack.to_json())
+        try:
+            return stack.connection.update_stack(stack.name, stack.to_json())
+        except boto.exception.BotoServerError, v:
+            if "No updates are to be performed." not in v.error_message:
+                raise
     else:
         return stack.connection.create_stack(stack.name, stack.to_json())

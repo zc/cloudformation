@@ -12,6 +12,7 @@
 #
 ##############################################################################
 from zope.testing import setupstack
+import boto.exception
 import json
 import manuel.capture
 import manuel.doctest
@@ -28,18 +29,31 @@ class Stack:
 
     def __init__(self, stack_name):
         self.stack_name = stack_name
+        self.data = self.raw = {}
 
-    def _setid(self, resource):
-        self.__class__.rid += 1
-        resource['id'] = str(self.__class__.rid)
+    def _setid(self, resource, base):
+        if base:
+            resource['id'] = base['id']
+        else:
+            self.__class__.rid += 1
+            resource['id'] = str(self.__class__.rid)
 
     def set_data(self, src):
+        raw = json.loads(src)
+        if raw and raw == self.raw:
+            raise boto.exception.BotoServerError(
+                '400', 'Bad Request',
+                '{"Error":{"Code":"ValidationError",'
+                '"Message":"No updates are to be performed.",'
+                '"Type":"Sender"},'
+                '"RequestId":"ab2b78fa-2761-11e2-9605-ff38a7d8daf7"}'
+                )
+        self.raw = raw
         data = json.loads(src)
         pprint.pprint(data, width=1)
-        self._setid(data)
+        self._setid(data, self.data)
         for n, r in sorted(data.get('Resources', {}).items()):
-            self.__class__.rid += 1
-            r['id'] = str(self.__class__.rid)
+            self._setid(r, self.data.get(n))
         self.data = data
 
 class CloudFormationConnection:
