@@ -66,7 +66,7 @@ class Stack:
 
     def to_json(self):
         j = json.dumps(self.data, cls=JSONEncoder, sort_keys=True, indent=2)
-        print j
+        #print j
         return j
 
     def stack_ref(self, stack_name, resource_name):
