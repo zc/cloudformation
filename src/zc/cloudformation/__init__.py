@@ -84,6 +84,9 @@ class Stack:
             filters={'tag:Name': name})
         return image.id
 
+    def user_data(self, *args):
+        return {"Fn::Base64": {"Fn::Join": ["", args]}}
+
 def ref(name):
     return dict(Ref=name)
 

@@ -255,3 +255,60 @@ log it, but zc.cloudformation will catch and ignore it.
 
 We can see this in the example above because the new data
 printed.
+
+User-data helper
+================
+
+When setting up wait conditions, you need to record the URL of a
+wait-condition handler.  For this, you need to invoke the
+CloudFormation helper functions, Base64 and Join.
+``zc.cloudformation`` provides a helper method that makes invoking
+these functions easier::
+
+
+    from zc.cloudformation import *
+
+    user_data = '''#!bin/sh -vex
+    '''
+
+    @upload
+    @Stack('us-f12g', 'inst')
+    def _(stack):
+        stack.resources.instance = Resource(
+            "AWS::EC2::Instance",
+            ImageId='ami-424242',
+            UserData=stack.user_data(
+                "#!bin/sh -vex\n"
+                "echo '", ref("handle"), "' > /etc/cf-notify-url\n"
+                ),
+            )
+        stack.resources.handle = Resource(
+            "AWS::CloudFormation::WaitConditionHandle")
+        stack.resources.wait = Resource(
+            "AWS::CloudFormation::WaitCondition",
+            Handle=ref("handle"),
+            DependsOn='instance',
+            )
+
+.. -> src
+
+    >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+    connecting to us-f12g
+    create inst
+    {u'Resources':
+        {u'handle': {u'Properties': {},
+                     u'Type': u'AWS::CloudFormation::WaitConditionHandle'},
+         u'instance':
+             {u'Properties':
+                 {u'ImageId': u'ami-424242',
+                  u'UserData':
+                      {u'Fn::Base64':
+                          {u'Fn::Join':
+                              [u'',
+                               [u"#!bin/sh -vex\necho '",
+                                {u'Ref': u'handle'},
+                                u"' > /etc/cf-notify-url\n"]]}}},
+              u'Type': u'AWS::EC2::Instance'},
+         u'wait': {u'DependsOn': u'instance',
+                   u'Properties': {u'Handle': {u'Ref': u'handle'}},
+                   u'Type': u'AWS::CloudFormation::WaitCondition'}}}
