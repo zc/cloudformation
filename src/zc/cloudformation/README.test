@@ -56,8 +56,41 @@ Let's look at a basic example::
     connecting to us-f12g
     create test
     {}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE
+
+    >>> import time
+    >>> _ = time.sleep.assert_called_once(9)
 
     >>> logging.basicConfig.assert_called_with()
+
+When a stack is uploaded, the status is checked every 9 seconds until
+the create or update is complete.  (In our test setup, we'll always
+see one in-progress message and then a complete message.)
+
+If there's a problem with the stack, an exception will be raised::
+
+
+    import boto.cloudformation, json
+
+    class Stack:
+        def __init__(self):
+            self.connection = boto.cloudformation.connect_to_region('us-f12g')
+            self.name = 'test'
+
+        def to_json(self):
+            return json.dumps(dict(Resources=dict(fail={})))
+
+    stack = Stack()
+
+.. -> src
+
+    >>> writefile('stack.py', src)
+    >>> main(['./stack.py'])
+    Traceback (most recent call last):
+    ...
+    ValueError: ('Fail', 'ROLLBACK_COMPLETE')
+
 
 This example was so simple, it would fail if we really talked to AWS,
 since we haven't defined any resources.
@@ -81,6 +114,8 @@ management::
     >>> main(['./stack.py'])
     connecting to us-f12g
     {u'Resources': {}}
+    UPDATE_IN_PROGRESS
+    UPDATE_COMPLETE
 
 If we create a subclass, the doc string will be used for a
 description::
@@ -105,6 +140,8 @@ description::
      u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
                                                           u'Value': u'q'}]},
                                u'Type': u'AWS::SQS::Queue'}}}
+    UPDATE_IN_PROGRESS
+    UPDATE_COMPLETE
 
 So, there are a few things to notice about this:
 
@@ -151,6 +188,8 @@ as a decorator::
      u'Resources': {u'queue': {u'Properties': {u'Tags': [{u'Key': u'Name',
                                                           u'Value': u'q'}]},
                                u'Type': u'AWS::SQS::Queue'}}}
+    UPDATE_IN_PROGRESS
+    UPDATE_COMPLETE
 
 
 References
@@ -181,6 +220,8 @@ references::
               u'Type': u'AWS::EC2::Subnet'},
           u'vpc': {u'Properties': {u'CidrBlock': u'10.0.0.0/16'},
                   u'Type': u'AWS::EC2::VPC'}}}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE
 
 Stacks have a ``stack_ref`` method that allows references accross
 stacks::
@@ -201,8 +242,10 @@ stacks::
     connecting to us-f12g
     create lb
     {u'Resources':
-        {u'elb': {u'Properties': {u'Subnets': [u'5']},
+        {u'elb': {u'Properties': {u'Subnets': [u'6']},
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE
 
 Utility methods
 ===============
@@ -240,8 +283,10 @@ calling ``zc.cloudformation.upload``, passing the stack::
     connecting to us-f12g
     create lb2
     {u'Resources': {u'elb':
-                       {u'Properties': {u'Subnets': [u'5']},
+                       {u'Properties': {u'Subnets': [u'6']},
                         u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE
 
 Noop updates
 ============
@@ -312,3 +357,5 @@ these functions easier::
          u'wait': {u'DependsOn': u'instance',
                    u'Properties': {u'Handle': {u'Ref': u'handle'}},
                    u'Type': u'AWS::CloudFormation::WaitCondition'}}}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE

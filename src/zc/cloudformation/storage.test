@@ -119,6 +119,8 @@ Here's an example::
                                                  u'Tags': [{u'Key': u'Name',
                                                             u'Value': u'mystorage volR2N4'}]},
                                  u'Type': u'AWS::EC2::Volume'}}}
+    CREATE_IN_PROGRESS
+    CREATE_COMPLETE
 
 
 In this example, we create a logical volume with 2 replicas, named ``1``

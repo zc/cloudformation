@@ -8,6 +8,7 @@ import logging
 import optparse
 import re
 import sys
+import time
 
 parser = optparse.OptionParser(__doc__)
 
@@ -116,9 +117,24 @@ def upload(stack):
               if s.stack_name == stack.name]
     if update:
         try:
-            return stack.connection.update_stack(stack.name, stack.to_json())
+            stack.connection.update_stack(stack.name, stack.to_json())
         except boto.exception.BotoServerError, v:
-            if "No updates are to be performed." not in v.error_message:
+            if "No updates are to be performed." in v.error_message:
+                return
+            else:
                 raise
     else:
-        return stack.connection.create_stack(stack.name, stack.to_json())
+        stack.connection.create_stack(stack.name, stack.to_json())
+
+    [boto_stack] = stack.connection.describe_stacks(stack.name)
+    while not (boto_stack.stack_status.endswith('_COMPLETE') or
+               boto_stack.stack_status.endswith('_FAILED')):
+        print boto_stack.stack_status
+        time.sleep(9)
+        boto_stack.update()
+
+    expected = 'UPDATE_COMPLETE' if update else 'CREATE_COMPLETE'
+    if boto_stack.stack_status != expected:
+        raise ValueError("Fail", boto_stack.stack_status)
+
+    print boto_stack.stack_status

@@ -26,6 +26,7 @@ def side_effect(m):
 
 class Stack:
     rid = 0
+    stack_status = None
 
     def __init__(self, stack_name):
         self.stack_name = stack_name
@@ -37,6 +38,13 @@ class Stack:
         else:
             self.__class__.rid += 1
             resource['id'] = str(self.__class__.rid)
+
+    def update(self):
+        if 'fail' in self.data.get('Resources', ()):
+            self.stack_status = 'ROLLBACK_COMPLETE'
+        else:
+            self.stack_status = self.stack_status.replace(
+                'IN_PROGRESS', 'COMPLETE')
 
     def set_data(self, src):
         raw = json.loads(src)
@@ -55,13 +63,19 @@ class Stack:
         for n, r in sorted(data.get('Resources', {}).items()):
             self._setid(r, self.data.get(n))
         self.data = data
+        if self.stack_status is None:
+            self.stack_status = 'CREATE_IN_PROGRESS'
+        else:
+            self.stack_status = 'UPDATE_IN_PROGRESS'
 
 class CloudFormationConnection:
 
     def __init__(self):
         self.stacks = {}
 
-    def describe_stacks(self):
+    def describe_stacks(self, name=None):
+        if name:
+            return [self.stacks[name]]
         return self.stacks.values()
 
     def create_stack(self, stack_name, src):
@@ -122,6 +136,7 @@ def setUp(test):
     test.globs['writefile'] = writefile
 
     setupstack.context_manager(test, mock.patch('logging.basicConfig'))
+    setupstack.context_manager(test, mock.patch('time.sleep'))
 
 
 def test_suite():
