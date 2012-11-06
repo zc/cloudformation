@@ -61,7 +61,7 @@ def servers(attachment, image, name='storage', zone=None, subnet=None,
     replicas = attachment[0].volume.replicas
     for a in attachment[1:]:
         if a.replica is not None:
-            raise TypeError("Can't use attachment replicats with servers")
+            raise TypeError("Can't use attachment replicas with servers")
         if (a.volume.stack is not stack or
             a.volume.replicas != replicas):
             raise InconsistentAttachements
@@ -97,7 +97,7 @@ def server(attachment, image, zone=None, subnet=None,
         tags.update(Name=hostname)
 
     if role:
-        user_data += 'cat %r > /etc/zim/role\n' % role
+        user_data += 'echo %r > /etc/zim/role\n' % role
 
     if isinstance(attachment, Attachment):
         attachment = attachment,
@@ -120,7 +120,7 @@ def server(attachment, image, zone=None, subnet=None,
                      VolumeId=zc.cloudformation.ref(
                          a.volume.rname(areplica, n))
                     ))
-        user_data += "cat %s %s >> /etc/zim/volumes\n" % (
+        user_data += "echo %s %s >> /etc/zim/volumes\n" % (
             a.mount_point, ' '.join(devices))
 
     properties = dict(
