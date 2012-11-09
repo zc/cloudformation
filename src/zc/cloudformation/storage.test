@@ -224,8 +224,7 @@ example, storage1.example.com gets::
 
 .. -> user_data
 
-    >>> stacks['mystorage'].data['Resources']['storage1']['Properties'
+    >>> connections['us-f12g'].stacks['mystorage'
+    ...     ].data['Resources']['storage1']['Properties'
     ...           ]['UserData'].decode('base64') == user_data
     True
-
-

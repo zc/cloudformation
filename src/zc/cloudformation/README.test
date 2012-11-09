@@ -242,15 +242,15 @@ stacks::
     connecting to us-f12g
     create lb
     {u'Resources':
-        {u'elb': {u'Properties': {u'Subnets': [u'6']},
+        {u'elb': {u'Properties': {u'Subnets': [u'8']},
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
 
-Utility methods
-===============
+Utility methods and functions
+=============================
 
-image_by_name(image_name)
+stack.image_by_name(image_name)
    Look up an image by name.
 
     >>> import zc.cloudformation
@@ -258,6 +258,122 @@ image_by_name(image_name)
     connecting to us-f12g
     >>> stack.image_by_name('default')
     'ami-42'
+
+stack.user_data(strings_or_dicts)
+    Compute a CloudFormation join expression for user data
+
+    When setting up wait conditions, you need to record the URL of a
+    wait-condition handler.  For this, you need to invoke the
+    CloudFormation helper functions, Base64 and Join.
+    ``zc.cloudformation`` provides a helper method that makes invoking
+    these functions easier::
+
+        from zc.cloudformation import *
+
+        user_data = '''#!bin/sh -vex
+        '''
+
+        @upload
+        @Stack('us-f12g', 'inst')
+        def _(stack):
+            stack.resources.instance = Resource(
+                "AWS::EC2::Instance",
+                ImageId='ami-424242',
+                UserData=stack.user_data(
+                    "#!bin/sh -vex\n"
+                    "echo '", ref("handle"), "' > /etc/cf-notify-url\n"
+                    ),
+                )
+            stack.resources.handle = Resource(
+                "AWS::CloudFormation::WaitConditionHandle")
+            stack.resources.wait = Resource(
+                "AWS::CloudFormation::WaitCondition",
+                Handle=ref("handle"),
+                DependsOn='instance',
+                )
+
+    .. -> src
+
+        >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+        connecting to us-f12g
+        create inst
+        {u'Resources':
+            {u'handle': {u'Properties': {},
+                         u'Type': u'AWS::CloudFormation::WaitConditionHandle'},
+             u'instance':
+                 {u'Properties':
+                     {u'ImageId': u'ami-424242',
+                      u'UserData':
+                          {u'Fn::Base64':
+                              {u'Fn::Join':
+                                  [u'',
+                                   [u"#!bin/sh -vex\necho '",
+                                    {u'Ref': u'handle'},
+                                    u"' > /etc/cf-notify-url\n"]]}}},
+                  u'Type': u'AWS::EC2::Instance'},
+             u'wait': {u'DependsOn': u'instance',
+                       u'Properties': {u'Handle': {u'Ref': u'handle'}},
+                       u'Type': u'AWS::CloudFormation::WaitCondition'}}}
+        CREATE_IN_PROGRESS
+        CREATE_COMPLETE
+
+find_stack(name, region_name=None)
+    Find a stack by name
+
+    Search for a stack, by name in the given region, or all regions.
+    If found, return boto.cloudformation.stack object, otherwise
+    return None.
+
+    An exception is raised if no region is specified and a stack
+    exists with the given name in more than one region.
+
+    >>> zc.cloudformation.find_stack('lb', 'us-manassas')
+    connecting to us-manassas
+    >>> zc.cloudformation.find_stack('no', 'us-f12g')
+    connecting to us-f12g
+    >>> zc.cloudformation.find_stack('lb', 'us-f12g').describe_resource('elb')[
+    ...   'DescribeStackResourceResponse'][
+    ...     'DescribeStackResourceResult'][
+    ...       'StackResourceDetail'][
+    ...         'PhysicalResourceId']
+    connecting to us-f12g
+    '11'
+    >>> zc.cloudformation.find_stack('lb').describe_resource('elb')[
+    ...   'DescribeStackResourceResponse'][
+    ...     'DescribeStackResourceResult'][
+    ...       'StackResourceDetail'][
+    ...         'PhysicalResourceId']
+    connecting to us-f12g
+    connecting to us-manassas
+    '11'
+    >>> zc.cloudformation.find_stack('inall')
+    Traceback (most recent call last):
+    ...
+    LookupError: ('In more than one region', 'inall')
+
+stack_region(name)
+    Find the region a stack is defined in.
+
+    Return the region that defines a stack with the given name.  Raise
+    an exception if the stack is defined in multiple regions or if it
+    can't be found at all.
+
+    This is used when layering stacks to avoid having to repeat a
+    region name.
+
+    >>> zc.cloudformation.stack_region('lb')
+    connecting to us-f12g
+    connecting to us-manassas
+    'us-f12g'
+
+    >>> zc.cloudformation.stack_region('innone')
+    Traceback (most recent call last):
+    ...
+    LookupError: innone
+    >>> zc.cloudformation.stack_region('inall')
+    Traceback (most recent call last):
+    ...
+    LookupError: ('In more than one region', 'inall')
 
 Stack scripts
 =============
@@ -283,7 +399,7 @@ calling ``zc.cloudformation.upload``, passing the stack::
     connecting to us-f12g
     create lb2
     {u'Resources': {u'elb':
-                       {u'Properties': {u'Subnets': [u'6']},
+                       {u'Properties': {u'Subnets': [u'8']},
                         u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
@@ -301,61 +417,48 @@ log it, but zc.cloudformation will catch and ignore it.
 We can see this in the example above because the new data
 printed.
 
-User-data helper
-================
+Deleting stacks
+===============
 
-When setting up wait conditions, you need to record the URL of a
-wait-condition handler.  For this, you need to invoke the
-CloudFormation helper functions, Base64 and Join.
-``zc.cloudformation`` provides a helper method that makes invoking
-these functions easier::
+There's a command-line script for deleting stacks that deletes one or
+more stacks, in order, waiting for them to be be deleted:
 
+    >>> delete_stacks = pkg_resources.load_entry_point(
+    ...     dist, 'console_scripts','delete-stacks')
 
-    from zc.cloudformation import *
+    >>> 'lb' in connections['us-f12g'].stacks
+    True
+    >>> 'vpc' in connections['us-f12g'].stacks
+    True
 
-    user_data = '''#!bin/sh -vex
-    '''
-
-    @upload
-    @Stack('us-f12g', 'inst')
-    def _(stack):
-        stack.resources.instance = Resource(
-            "AWS::EC2::Instance",
-            ImageId='ami-424242',
-            UserData=stack.user_data(
-                "#!bin/sh -vex\n"
-                "echo '", ref("handle"), "' > /etc/cf-notify-url\n"
-                ),
-            )
-        stack.resources.handle = Resource(
-            "AWS::CloudFormation::WaitConditionHandle")
-        stack.resources.wait = Resource(
-            "AWS::CloudFormation::WaitCondition",
-            Handle=ref("handle"),
-            DependsOn='instance',
-            )
-
-.. -> src
-
-    >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+    >>> logging.basicConfig.reset_mock()
+    >>> delete_stacks(['lb', 'vpc'])
     connecting to us-f12g
-    create inst
-    {u'Resources':
-        {u'handle': {u'Properties': {},
-                     u'Type': u'AWS::CloudFormation::WaitConditionHandle'},
-         u'instance':
-             {u'Properties':
-                 {u'ImageId': u'ami-424242',
-                  u'UserData':
-                      {u'Fn::Base64':
-                          {u'Fn::Join':
-                              [u'',
-                               [u"#!bin/sh -vex\necho '",
-                                {u'Ref': u'handle'},
-                                u"' > /etc/cf-notify-url\n"]]}}},
-              u'Type': u'AWS::EC2::Instance'},
-         u'wait': {u'DependsOn': u'instance',
-                   u'Properties': {u'Handle': {u'Ref': u'handle'}},
-                   u'Type': u'AWS::CloudFormation::WaitCondition'}}}
-    CREATE_IN_PROGRESS
-    CREATE_COMPLETE
+    connecting to us-manassas
+    DELETE_IN_PROGRESS
+    DELETE_COMPLETE
+    connecting to us-f12g
+    connecting to us-manassas
+    DELETE_IN_PROGRESS
+    DELETE_COMPLETE
+
+    >>> 'lb' in connections['us-f12g'].stacks
+    False
+    >>> 'vpc' in connections['us-f12g'].stacks
+    False
+
+An error is raised if deletion is ambiguous:
+
+    >>> delete_stacks(['inall'])
+    Traceback (most recent call last):
+    ...
+    LookupError: ('In more than one region', 'inall')
+
+You can specify a region to delete a stack from though:
+
+    >>> delete_stacks(['inall', '-rus-manassas'])
+    connecting to us-manassas
+    DELETE_IN_PROGRESS
+    DELETE_COMPLETE
+    >>> connections['us-manassas'].stacks
+    {}

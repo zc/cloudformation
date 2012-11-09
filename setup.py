@@ -24,6 +24,7 @@ extras_require = dict(test=['zope.testing', 'manuel', 'mock', 'zc.zk [test]'])
 entry_points = """
 [console_scripts]
 cloudformation = zc.cloudformation:main
+delete-stacks = zc.cloudformation:delete_stacks
 """
 
 setup(

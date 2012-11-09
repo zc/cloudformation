@@ -69,7 +69,7 @@ class Stack:
 
     def to_json(self):
         j = json.dumps(
-            self.data, cls=JSONEncoder, sort_keys=True, indent=2
+            self.data, cls=JSONEncoder, sort_keys=True, indent=0
             )
         j = re.sub(r'\s+}', '}', j)
         j = re.sub(r'\s+]', ']', j)
@@ -143,3 +143,54 @@ def upload(stack):
         raise ValueError("Fail", boto_stack.stack_status)
 
     print boto_stack.stack_status
+
+def find_stack(name, region_name=None):
+    found = []
+
+    if region_name:
+        region_names = region_name,
+    else:
+        region_names = sorted(region.name
+                              for region in boto.cloudformation.regions())
+
+    for region_name in region_names:
+        conn = boto.cloudformation.connect_to_region(region_name)
+        found.extend([s for s in conn.describe_stacks()
+                      if s.stack_name == name])
+
+    if found:
+        if len(found) > 1:
+            raise LookupError("In more than one region", name)
+        return found[0]
+
+def stack_region(name):
+    stack = find_stack(name)
+    if stack:
+        return stack.connection.region.name
+    raise LookupError(name)
+
+def delete_stacks(args=None):
+    if args is None:
+        args = sys.argv[1:]
+
+    parser = optparse.OptionParser(__doc__)
+    parser.add_option('--region', '-r', help='Region to look for stacks in')
+
+    options, stacks = parser.parse_args(args)
+
+    logging.basicConfig()
+
+    for stack_name in stacks:
+        stack = find_stack(stack_name, options.region)
+        stack.connection.delete_stack(stack_name)
+
+        while not (stack.stack_status.endswith('_COMPLETE') or
+                   stack.stack_status.endswith('_FAILED')):
+            print stack.stack_status
+            time.sleep(9)
+            stack.update()
+
+        if stack.stack_status != 'DELETE_COMPLETE':
+            raise ValueError("Fail", stack.stack_status)
+
+        print stack.stack_status

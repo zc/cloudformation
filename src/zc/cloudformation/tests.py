@@ -24,12 +24,18 @@ import unittest
 def side_effect(m):
     return lambda f: setattr(m, 'side_effect', f)
 
+class Region:
+
+    def __init__(self, name):
+        self.name = name
+
 class Stack:
     rid = 0
     stack_status = None
 
-    def __init__(self, stack_name):
+    def __init__(self, stack_name, connection):
         self.stack_name = stack_name
+        self.connection = connection
         self.data = self.raw = {}
 
     def _setid(self, resource, base):
@@ -46,7 +52,7 @@ class Stack:
             self.stack_status = self.stack_status.replace(
                 'IN_PROGRESS', 'COMPLETE')
 
-    def set_data(self, src):
+    def set_data(self, src, noisy=True):
         raw = json.loads(src)
         if raw and raw == self.raw:
             raise boto.exception.BotoServerError(
@@ -58,7 +64,8 @@ class Stack:
                 )
         self.raw = raw
         data = json.loads(src)
-        pprint.pprint(data, width=1)
+        if noisy:
+            pprint.pprint(data, width=1)
         self._setid(data, self.data)
         for n, r in sorted(data.get('Resources', {}).items()):
             self._setid(r, self.data.get(n))
@@ -68,33 +75,43 @@ class Stack:
         else:
             self.stack_status = 'UPDATE_IN_PROGRESS'
 
+    def describe_resource(self, resource_name):
+        resource = self.data['Resources'][resource_name]
+        return dict(
+            DescribeStackResourceResponse=dict(
+                DescribeStackResourceResult=dict(
+                    StackResourceDetail=dict(
+                        PhysicalResourceId=resource['id']))))
+
 class CloudFormationConnection:
 
-    def __init__(self):
+    def __init__(self, region):
         self.stacks = {}
+        self.region = region
+        self.create_stack('inall', '{}', False)
 
     def describe_stacks(self, name=None):
         if name:
             return [self.stacks[name]]
         return self.stacks.values()
 
-    def create_stack(self, stack_name, src):
+    def create_stack(self, stack_name, src, noisy=True):
         if stack_name in self.stacks:
             raise KeyError(stack_name)
-        print 'create', stack_name
-        self.stacks[stack_name] = Stack(stack_name)
-        return self.stacks[stack_name].set_data(src)
+        if noisy:
+            print 'create', stack_name
+        self.stacks[stack_name] = Stack(stack_name, self)
+        self.stacks[stack_name].set_data(src, noisy)
 
     def update_stack(self, stack_name, src):
-        return self.stacks[stack_name].set_data(src)
+        self.stacks[stack_name].set_data(src)
 
     def describe_stack_resource(self, stack_name, resource_name):
-        resource = self.stacks[stack_name].data['Resources'][resource_name]
-        return dict(
-            DescribeStackResourceResponse=dict(
-                DescribeStackResourceResult=dict(
-                    StackResourceDetail=dict(
-                        PhysicalResourceId=resource['id']))))
+        return self.stacks[stack_name].describe_resource(resource_name)
+
+    def delete_stack(self, stack_name):
+        stack = self.stacks.pop(stack_name)
+        stack.stack_status = "DELETE_IN_PROGRESS"
 
 class O:
     def __init__(self, **kw):
@@ -115,15 +132,25 @@ def setUp(test):
     connect_to_region = setupstack.context_manager(
         test, mock.patch('boto.cloudformation.connect_to_region'))
 
-    connection = CloudFormationConnection()
-    test.globs['stacks'] = connection.stacks
+    regions = ()
+    connections = {}
+    for name in 'us-f12g', 'us-manassas':
+        regions += (Region(name), )
+        connections[name] = CloudFormationConnection(regions[-1])
+
+    test.globs['connections'] = connections
 
     @side_effect(
         setupstack.context_manager(
             test, mock.patch('boto.cloudformation.connect_to_region')))
     def _(region_name):
         print 'connecting to', region_name
-        return connection
+        return connections[region_name]
+
+    setupstack.context_manager(
+        test, mock.patch('boto.cloudformation.regions',
+                         side_effect=lambda : regions)
+        )
 
     @side_effect(
         setupstack.context_manager(
