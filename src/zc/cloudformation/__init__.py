@@ -183,6 +183,7 @@ def delete_stacks(args=None):
     for stack_name in stacks:
         stack = find_stack(stack_name, options.region)
         stack.connection.delete_stack(stack_name)
+        stack.update()
 
         while not (stack.stack_status.endswith('_COMPLETE') or
                    stack.stack_status.endswith('_FAILED')):

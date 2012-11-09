@@ -432,20 +432,21 @@ more stacks, in order, waiting for them to be be deleted:
     True
 
     >>> logging.basicConfig.reset_mock()
+
     >>> delete_stacks(['lb', 'vpc'])
     connecting to us-f12g
     connecting to us-manassas
-    DELETE_IN_PROGRESS
     DELETE_COMPLETE
     connecting to us-f12g
     connecting to us-manassas
-    DELETE_IN_PROGRESS
     DELETE_COMPLETE
 
     >>> 'lb' in connections['us-f12g'].stacks
     False
     >>> 'vpc' in connections['us-f12g'].stacks
     False
+
+    >>> logging.basicConfig.assert_called_with()
 
 An error is raised if deletion is ambiguous:
 
@@ -458,7 +459,6 @@ You can specify a region to delete a stack from though:
 
     >>> delete_stacks(['inall', '-rus-manassas'])
     connecting to us-manassas
-    DELETE_IN_PROGRESS
     DELETE_COMPLETE
     >>> connections['us-manassas'].stacks
     {}
