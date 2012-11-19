@@ -46,9 +46,7 @@ class InconsistentAttachements(Exception):
     """Multiple attachments for a server have inconsistent stacks or replicas
     """
 
-user_data_base = '''#!/bin/sh -vex
-mkdir -p /etc/zim
-'''
+user_data_base = ('#!/bin/sh -vex\n', 'mkdir -p /etc/zim\n')
 
 def servers(attachment, image, name='storage', zone=None, subnet=None,
             type='m1.small', domain=None, role=None, security_groups=None,
@@ -79,12 +77,24 @@ def servers(attachment, image, name='storage', zone=None, subnet=None,
             tags.update(Name=rname)
 
         setattr(stack.resources, rname,
-                server(attachment, image, zone, subnet,
+                server(stack, rname, attachment, image, zone, subnet,
                        type, role, security_groups,
                        instance_profile, tags,
                        replica=replica, hostname=hostname))
+        setattr(stack.resources, rname+'Handle',
+                zc.cloudformation.Resource(
+                    "AWS::CloudFormation::WaitConditionHandle")
+                )
+        setattr(stack.resources, rname+'Wait',
+                zc.cloudformation.Resource(
+                    "AWS::CloudFormation::WaitCondition",
+                    Handle=zc.cloudformation.ref(rname+"Handle"),
+                    Timeout="1200",
+                    DependsOn=rname,
+                    )
+                )
 
-def server(attachment, image, zone=None, subnet=None,
+def server(stack, rname, attachment, image, zone=None, subnet=None,
            type='m1.small', role=None, security_groups=None,
            instance_profile=None, tags=None, replica='', hostname=None):
 
@@ -92,12 +102,12 @@ def server(attachment, image, zone=None, subnet=None,
 
     user_data = user_data_base
     if hostname:
-        user_data += 'hostname %s\n' % hostname
+        user_data += ('hostname %s\n' % hostname, )
         tags = tags.copy()
         tags.update(Name=hostname)
 
     if role:
-        user_data += 'echo %r > /etc/zim/role\n' % role
+        user_data += ('echo %r > /etc/zim/role\n' % role, )
 
     if isinstance(attachment, Attachment):
         attachment = attachment,
@@ -120,16 +130,23 @@ def server(attachment, image, zone=None, subnet=None,
                      VolumeId=zc.cloudformation.ref(
                          a.volume.rname(areplica, n))
                     ))
-        user_data += "echo %s %s >> /etc/zim/volumes\n" % (
-            a.mount_point, ' '.join(devices))
+        user_data += ("echo %s %s >> /etc/zim/volumes\n" % (
+            a.mount_point, ' '.join(devices)), )
+
+    user_data += (
+        "echo '",
+        zc.cloudformation.ref(rname+"Handle"),
+        "' > /etc/zim/cf-notify-url\n"
+        )
 
     properties = dict(
         ImageId=image,
         InstanceType=type,
         Tags=tags,
         Volumes=volumes,
-        UserData=user_data.encode('base64'),
+        UserData=stack.user_data(*user_data),
         )
+
     if zone:
         if zone != vzone:
             raise ValueError("Volume and server in different zones")
