@@ -3,11 +3,11 @@ Cloud-formation stack generation
 ================================
 
 The zc.cloudformation package provides a framework for managing AWS
-resources using AWS CloudFormation.  It workes by generating a
+resources using AWS CloudFormation.  It works by generating a
 CloudFormation stack data structure, converts it to JSON and uploads
 it to AWS using boto.
 
-To use it, you run its main program, suupplying the name of a stack
+To use it, you run its main program, supplying the name of a stack
 module or file.  If the name is a valid module name, it will be
 imported, otherwise, it's interpreted as a file name and execed.
 
@@ -70,7 +70,6 @@ see one in-progress message and then a complete message.)
 
 If there's a problem with the stack, an exception will be raised::
 
-
     import boto.cloudformation, json
 
     class Stack:
@@ -91,12 +90,12 @@ If there's a problem with the stack, an exception will be raised::
     ...
     ValueError: ('Fail', 'ROLLBACK_COMPLETE')
 
-
 This example was so simple, it would fail if we really talked to AWS,
 since we haven't defined any resources.
 
 zc.cloudformation provides a nummber of helper facilities to help you
 create your cloudformation stack data.
+
 
 zc.cloudformation.Stack
 =======================
@@ -198,7 +197,6 @@ References
 A ``ref`` helper can be used as a minor convenience to spell resource
 references::
 
-
     import zc.cloudformation
     from zc.cloudformation import ref, Resource
 
@@ -246,6 +244,7 @@ stacks::
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
+
 
 Utility methods and functions
 =============================
@@ -375,6 +374,7 @@ stack_region(name)
     ...
     LookupError: ('In more than one region', 'inall')
 
+
 Stack scripts
 =============
 
@@ -404,11 +404,12 @@ calling ``zc.cloudformation.upload``, passing the stack::
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
 
+
 Noop updates
 ============
 
 If you make an update with data that's the same as that provided
-before, a CloudFormation will generate an error response.  Boto will
+before, CloudFormation will generate an error response.  Boto will
 log it, but zc.cloudformation will catch and ignore it.
 
     >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
@@ -416,6 +417,7 @@ log it, but zc.cloudformation will catch and ignore it.
 
 We can see this in the example above because the new data
 printed.
+
 
 Deleting stacks
 ===============

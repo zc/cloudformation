@@ -2,7 +2,7 @@
 Helper module for setting up "storage servers"
 ==============================================
 
-In our applications, we typically have to types of infrastructure,
+In our applications, we typically have two types of infrastructure,
 storage servers and application servers.  Application servers are
 configured with elastic load balancers (EBSs) and autoscaling groups
 in a fairly straightforward manner.
@@ -149,7 +149,6 @@ Here's an example::
                                  u'Type': u'AWS::EC2::Volume'}}}
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
-
 
 In this example, we create a logical volume with 2 replicas, named ``1``
 and ``2`` each made of 4 64-Gigiabyte EBS volumes by calling:
