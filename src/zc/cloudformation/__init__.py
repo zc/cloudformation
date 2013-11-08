@@ -127,9 +127,14 @@ def upload(stack):
             if "No updates are to be performed." in v.error_message:
                 return
             else:
+                print v.message
                 raise
     else:
-        stack.connection.create_stack(stack.name, stack.to_json())
+        try:
+            stack.connection.create_stack(stack.name, stack.to_json())
+        except boto.exception.BotoServerError, v:
+            print v.message
+            raise
 
     [boto_stack] = stack.connection.describe_stacks(stack.name)
     while not (boto_stack.stack_status.endswith('_COMPLETE') or
