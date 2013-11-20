@@ -174,9 +174,7 @@ as a decorator::
     @zc.cloudformation.Stack('us-f12g', 'test')
     def stack(stack):
         "My test stack using a decorator"
-        stack['queue'] = zc.cloudformation.Resource(
-            "AWS::SQS::Queue", Tags=dict(Name='q'))
-
+        stack.resource('queue', "AWS::SQS::Queue", Tags=dict(Name='q'))
 
 .. -> src
 
@@ -190,9 +188,8 @@ as a decorator::
     UPDATE_IN_PROGRESS
     UPDATE_COMPLETE
 
-In this example, we set an item on the stack.  This is short-hand for
-setting an attribute on on the stack's ``resources`` attribute. It's
-particularly convenient when a name is computed.
+In this example, we used the ``resource`` method on the stack, which
+provides a more compact way to define a resources.
 
 References
 ==========

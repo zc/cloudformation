@@ -89,6 +89,9 @@ class Stack:
     def user_data(self, *args):
         return {"Fn::Base64": {"Fn::Join": ["", args]}}
 
+    def resource(self, name, *args, **kw):
+        setattr(self.resources, name, Resource(*args, **kw))
+
 def ref(name):
     return dict(Ref=name)
 

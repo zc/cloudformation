@@ -11,6 +11,9 @@ Changes
 - Added an ``attr`` helper function for creating resource-attribute
   references.
 
+- Added a stack ``resource(name, type, **options)`` method for more
+  compactly defining stack resources.
+
 0.3.0 (2012-11-09)
 ==================
 
