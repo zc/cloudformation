@@ -5,6 +5,9 @@ Python framework for generating AWS CloudFormation stacks
 Changes
 *******
 
+0.4.0 (2012-11-20)
+==================
+
 - Added a ``create_only`` flag to the ``upload`` function to prevent
   stack updates.
 
