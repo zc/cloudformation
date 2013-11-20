@@ -114,7 +114,7 @@ def main(args=None):
 
 def upload(stack):
 
-    update = [s for s in stack.connection.describe_stacks()
+    update = [s for s in stack.connection.describe_stacks(stack.name)
               if s.stack_name == stack.name]
     if update:
         try:

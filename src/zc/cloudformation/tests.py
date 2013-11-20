@@ -92,7 +92,8 @@ class CloudFormationConnection:
 
     def describe_stacks(self, name=None):
         if name:
-            return [self.stacks[name]]
+            return [stack for stack in self.stacks.values()
+                    if stack.stack_name == name]
         return self.stacks.values()
 
     def create_stack(self, stack_name, src, noisy=True):
