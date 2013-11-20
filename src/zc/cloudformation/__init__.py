@@ -112,11 +112,16 @@ def main(args=None):
 
     upload(stack)
 
-def upload(stack):
+def upload(stack=None, create_only=False):
+    if stack is None:
+        return lambda s: upload(s, create_only)
 
     update = [s for s in stack.connection.describe_stacks(stack.name)
               if s.stack_name == stack.name]
     if update:
+        if create_only:
+            raise SystemError("Updates not allowed.")
+
         try:
             stack.connection.update_stack(stack.name, stack.to_json())
         except boto.exception.BotoServerError, v:

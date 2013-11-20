@@ -404,9 +404,8 @@ calling ``zc.cloudformation.upload``, passing the stack::
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
 
-
 Noop updates
-============
+------------
 
 If you make an update with data that's the same as that provided
 before, CloudFormation will generate an error response.  Boto will
@@ -418,6 +417,31 @@ log it, but zc.cloudformation will catch and ignore it.
 We can see this in the example above because the new data
 printed.
 
+Preventing updates
+------------------
+
+It can be really bad if you unintentionally update a stack when you
+intend to create a new one.  To help guard against this, you can
+provide a create_only flag to prevent ipdating a stack:
+
+
+    import zc.cloudformation
+    from zc.cloudformation import Resource
+
+    @zc.cloudformation.upload(create_only=True)
+    @zc.cloudformation.Stack('us-f12g', 'lb2')
+    def stack(self):
+        self.resources.elb = Resource(
+            "AWS::ElasticLoadBalancing::LoadBalancer",
+            Subnets=[self.stack_ref('vpc', 'public_subnet')])
+
+
+.. -> src
+
+    >>> exec(src, {}) # doctest: +NORMALIZE_WHITESPACE
+    Traceback (most recent call last):
+    ...
+    SystemError: Updates not allowed.
 
 Deleting stacks
 ===============
