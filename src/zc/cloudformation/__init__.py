@@ -92,6 +92,9 @@ class Stack:
 def ref(name):
     return dict(Ref=name)
 
+def attr(rname, rattr):
+    return {"Fn::GetAtt": [rname, rattr]}
+
 def main(args=None):
     if args is None:
         args = sys.argv[1:]

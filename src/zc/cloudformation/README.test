@@ -194,6 +194,9 @@ as a decorator::
 References
 ==========
 
+Local references
+----------------
+
 A ``ref`` helper can be used as a minor convenience to spell resource
 references::
 
@@ -221,6 +224,19 @@ references::
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
 
+Attributes
+----------
+
+The attr methof can be used to reference an attribute of a local
+resource.  It's a short hand for a JSON structure:
+
+    >>> from zc.cloudformation import attr
+    >>> attr('myresource', 'attrname')
+    {'Fn::GetAtt': ['myresource', 'attrname']}
+
+cross-stack references
+----------------------
+
 Stacks have a ``stack_ref`` method that allows references accross
 stacks::
 
@@ -244,7 +260,6 @@ stacks::
                   u'Type': u'AWS::ElasticLoadBalancing::LoadBalancer'}}}
     CREATE_IN_PROGRESS
     CREATE_COMPLETE
-
 
 Utility methods and functions
 =============================
