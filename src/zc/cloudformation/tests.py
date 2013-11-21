@@ -92,8 +92,10 @@ class CloudFormationConnection:
 
     def describe_stacks(self, name=None):
         if name:
-            return [stack for stack in self.stacks.values()
-                    if stack.stack_name == name]
+            try:
+                return [self.stacks[name]]
+            except KeyError:
+                raise boto.exception.BotoServerError('400 Bad Request', '')
         return self.stacks.values()
 
     def create_stack(self, stack_name, src, noisy=True):
