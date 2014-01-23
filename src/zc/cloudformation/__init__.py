@@ -175,7 +175,7 @@ def find_stack(name, region_name=None):
         try:
             found.extend([s for s in conn.describe_stacks()
                       if s.stack_name == name])
-        except socket.timeout:
+        except socket.error:
             continue
 
     if found:
