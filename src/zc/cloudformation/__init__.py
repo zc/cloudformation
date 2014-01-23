@@ -7,6 +7,7 @@ import json
 import logging
 import optparse
 import re
+import socket
 import sys
 import time
 
@@ -171,8 +172,11 @@ def find_stack(name, region_name=None):
 
     for region_name in region_names:
         conn = boto.cloudformation.connect_to_region(region_name)
-        found.extend([s for s in conn.describe_stacks()
+        try:
+            found.extend([s for s in conn.describe_stacks()
                       if s.stack_name == name])
+        except socket.timeout:
+            continue
 
     if found:
         if len(found) > 1:
