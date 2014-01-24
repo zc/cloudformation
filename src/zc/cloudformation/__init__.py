@@ -179,8 +179,8 @@ def find_stack(name, region_name=None):
             raise LookupError("In more than one region", name)
         return found[0]
 
-def stack_region(name):
-    stack = find_stack(name)
+def stack_region(name, region_name=None):
+    stack = find_stack(name, region_name)
     if stack:
         return stack.connection.region.name
     raise LookupError(name)
