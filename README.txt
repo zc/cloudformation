@@ -8,7 +8,7 @@ Changes
 0.5.1 (2013-11-21)
 ==================
 
-Fixed: creating stack failed dur to a bug in querying for existing stacks.
+Fixed: creating stack failed due to a bug in querying for existing stacks.
 
 0.5.0 (2013-11-20)
 ==================
