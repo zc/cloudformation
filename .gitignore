@@ -1,6 +1,7 @@
 /src/zc.cloudformation.egg-info
 bin
 develop-eggs
+dist
 parts
 .installed.cfg
 *.pyc
