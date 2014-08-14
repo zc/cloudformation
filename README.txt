@@ -5,6 +5,11 @@ Python framework for generating AWS CloudFormation stacks
 Changes
 *******
 
+0.6.0 (2014-08-14)
+==================
+
+- Allow region_name argument to stack_region to constrain find_stack.
+
 0.5.1 (2013-11-21)
 ==================
 
